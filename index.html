@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JARVIS & RIDA - Cyberpunk HUD System</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Courier New', Courier, monospace;
+        }
+        body {
+            background-color: #02050b;
+            color: #00ffcc;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            overflow: hidden;
+            position: relative;
+        }
+        /* Background Grid & Scanline Glow Animation */
+        body::before {
+            content: " ";
+            display: block;
+            position: absolute;
+            top: 0; left: 0; bottom: 0; right: 0;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
+            z-index: 99;
+            background-size: 100% 4px, 6px 100%;
+            pointer-events: none;
+        }
+        header {
+            background: rgba(0, 255, 204, 0.03);
+            border-bottom: 2px solid #00ffcc;
+            padding: 12px;
+            text-align: center;
+            box-shadow: 0 0 20px rgba(0, 255, 204, 0.4);
+            animation: borderGlow 3s infinite alternate;
+        }
+        @keyframes borderGlow {
+            0% { box-shadow: 0 0 10px rgba(0, 255, 204, 0.2); border-color: #00ffcc; }
+            100% { box-shadow: 0 0 25px rgba(0, 255, 204, 0.8); border-color: #ff0055; }
+        }
+        header h1 {
+            font-size: 1.1rem;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            text-shadow: 0 0 10px #00ffcc;
+        }
+        header p {
+            font-size: 0.7rem;
+            color: #ff0055;
+            margin-top: 3px;
+            text-shadow: 0 0 8px #ff0055;
+        }
+        .call-status {
+            text-align: center;
+            padding: 6px;
+            font-size: 0.75rem;
+            color: #00ffcc;
+            background: rgba(0, 255, 204, 0.02);
+            border-bottom: 1px dashed rgba(0, 255, 204, 0.3);
+        }
+        .chat-container {
+            flex: 1;
+            padding: 15px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        .message {
+            max-width: 85%;
+            padding: 12px 16px;
+            border-radius: 10px;
+            font-size: 0.85rem;
+            line-height: 1.4;
+            word-wrap: break-word;
+            animation: fadeIn 0.4s ease-in-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .jarvis-msg {
+            background: rgba(0, 255, 204, 0.08);
+            border: 1px solid #00ffcc;
+            color: #00ffcc;
+            align-self: flex-start;
+            box-shadow: 0 0 12px rgba(0, 255, 204, 0.25);
+        }
+        .rida-msg {
+            background: rgba(255, 0, 85, 0.08);
+            border: 1px solid #ff0055;
+            color: #ff99bb;
+            align-self: flex-start;
+            box-shadow: 0 0 12px rgba(255, 0, 85, 0.25);
+        }
+        .user-msg {
+            background: rgba(0, 150, 255, 0.08);
+            border: 1px solid #0099ff;
+            color: #99ccff;
+            align-self: flex-end;
+            box-shadow: 0 0 12px rgba(0, 150, 255, 0.25);
+        }
+        .controls-container {
+            padding: 12px;
+            background: #02050a;
+            border-top: 2px solid #00ffcc;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            box-shadow: 0 -5px 20px rgba(0, 255, 204, 0.2);
+        }
+        .selector-row {
+            display: flex;
+            justify-content: space-between;
+            gap: 8px;
+        }
+        .select-btn {
+            flex: 1;
+            padding: 8px;
+            background: rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(0, 255, 204, 0.5);
+            color: #00ffcc;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            cursor: pointer;
+            text-transform: uppercase;
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
+        .select-btn.active-jarvis {
+            background: rgba(0, 255, 204, 0.25);
+            border-color: #00ffcc;
+            box-shadow: 0 0 15px #00ffcc;
+            text-shadow: 0 0 5px #00ffcc;
+        }
+        .select-btn.active-rida {
+            background: rgba(255, 0, 85, 0.25);
+            border-color: #ff0055;
+            color: #ff0055;
+            box-shadow: 0 0 15px #ff0055;
+            text-shadow: 0 0 5px #ff0055;
+        }
+        .input-row {
+            display: flex;
+            gap: 8px;
+        }
+        input {
+            flex: 1;
+            padding: 12px;
+            background: #050b14;
+            border: 1px solid #00ffcc;
+            color: #00ffcc;
+            border-radius: 6px;
+            outline: none;
+            font-size: 0.85rem;
+            box-shadow: inset 0 0 8px rgba(0, 255, 204, 0.2);
+        }
+        input:focus {
+            border-color: #ff0055;
+            box-shadow: inset 0 0 8px rgba(255, 0, 85, 0.4);
+        }
+        button.action-btn {
+            background: #00ffcc;
+            color: #030712;
+            border: none;
+            padding: 0 16px;
+            border-radius: 6px;
+            font-weight: bold;
+            cursor: pointer;
+            text-transform: uppercase;
+            font-size: 0.8rem;
+            box-shadow: 0 0 10px #00ffcc;
+            transition: 0.2s;
+        }
+        button.action-btn:active {
+            transform: scale(0.95);
+        }
+        button.mic-btn {
+            background: #ff0055;
+            color: #fff;
+            box-shadow: 0 0 10px #ff0055;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1 id="systemTitle">J.A.R.V.I.S & RIDA HUD</h1>
+        <p>Authorized Commander: M Shahban Ali</p>
+    </header>
+
+    <div class="call-status" id="callStatus">Active: JARVIS (Cyber Link Connected)</div>
+
+    <div class="chat-container" id="chatContainer">
+        <div class="message jarvis-msg">
+            System Online, Sir M Shahban Ali! Holographic HUD active hai. Bataiye kisse baat karni hai?
+        </div>
+    </div>
+
+    <div class="controls-container">
+        <div class="selector-row">
+            <button class="select-btn active-jarvis" id="jarvisBtn" onclick="setMode('jarvis')">🤖 JARVIS (Male)</button>
+            <button class="select-btn" id="ridaBtn" onclick="setMode('rida')">👑 RIDA (Queen)</button>
+        </div>
+        <div class="input-row">
+            <input type="text" id="userInput" placeholder="Yahan message likhein..." autocomplete="off">
+            <button class="action-btn mic-btn" onclick="startListening()">🎤 Mic</button>
+            <button class="action-btn" onclick="sendMessage()">Send</button>
+        </div>
+    </div>
+
+    <script>
+        const GEMINI_API_KEY = "YOUR_GEMINI_API_KEY_HERE"; 
+
+        const chatContainer = document.getElementById('chatContainer');
+        const userInput = document.getElementById('userInput');
+        const callStatus = document.getElementById('callStatus');
+        const jarvisBtn = document.getElementById('jarvisBtn');
+        const ridaBtn = document.getElementById('ridaBtn');
+        const systemTitle = document.getElementById('systemTitle');
+
+        let currentAssistant = 'jarvis';
+
+        function setMode(mode) {
+            currentAssistant = mode;
+            if(mode === 'jarvis') {
+                jarvisBtn.className = "select-btn active-jarvis";
+                ridaBtn.className = "select-btn";
+                callStatus.innerText = "Active: JARVIS (Cyan Mode)";
+                systemTitle.innerText = "J.A.R.V.I.S Core System";
+                speak("JARVIS online, Sir.");
+            } else {
+                ridaBtn.className = "select-btn active-rida";
+                jarvisBtn.className = "select-btn";
+                callStatus.innerText = "Active: RIDA (Pink Queen Mode)";
+                systemTitle.innerText = "R.I.D.A Voice System";
+                speak("Hello Shahban, rida online hai.");
+            }
+        }
+
+        function speak(text) {
+            if ('speechSynthesis' in window) {
+                window.speechSynthesis.cancel();
+                let utterance = new SpeechSynthesisUtterance(text);
+                utterance.lang = 'en-US';
+                utterance.rate = 1.0;
+
+                let voices = window.speechSynthesis.getVoices();
+                if (voices.length > 0) {
+                    if (currentAssistant === 'rida') {
+                        let femaleVoice = voices.find(v => v.name.includes('Female') || v.name.includes('Zira') || v.name.includes('Google UK English Female') || v.name.includes('Samantha'));
+                        if (femaleVoice) utterance.voice = femaleVoice;
+                        utterance.pitch = 1.35; 
+                    } else {
+                        let maleVoice = voices.find(v => v.name.includes('Male') || v.name.includes('David') || v.name.includes('Google US English') || v.name.includes('Mark'));
+                        if (maleVoice) utterance.voice = maleVoice;
+                        utterance.pitch = 0.85; 
+                    }
+                }
+                window.speechSynthesis.speak(utterance);
+            }
+        }
+
+        function startListening() {
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            if (!SpeechRecognition) {
+                alert("Browser voice recognition support nahi karta.");
+                return;
+            }
+
+            const recognition = new SpeechRecognition();
+            recognition.lang = 'en-US';
+            recognition.interimResults = false;
+
+            callStatus.innerText = "Listening... Bolna shuru karein...";
+            recognition.start();
+
+            recognition.onresult = function(event) {
+                let speechText = event.results[0][0].transcript;
+                userInput.value = speechText;
+                callStatus.innerText = currentAssistant === 'jarvis' ? "Active: JARVIS" : "Active: RIDA";
+                sendMessage();
+            };
+
+            recognition.onerror = function() {
+                callStatus.innerText = "Awaz detect nahi hui, dobara koshish karein.";
+            };
+        }
+
+        userInput.addEventListener('keypress', function (e) {
+            if (e.key === 'Enter') {
+                sendMessage();
+            }
+        });
+
+        async function sendMessage() {
+            let text = userInput.value.trim();
+            if (text === '') return;
+
+            let userDiv = document.createElement('div');
+            userDiv.className = 'message user-msg';
+            userDiv.innerText = text;
+            chatContainer.appendChild(userDiv);
+
+            userInput.value = '';
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+
+            let reply = "";
+
+            if(GEMINI_API_KEY && GEMINI_API_KEY !== "YOUR_GEMINI_API_KEY_HERE") {
+                try {
+                    let response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            contents: [{ parts: [{ text: `You are an AI assistant named ${currentAssistant === 'rida' ? 'Rida (a loving female companion to Shahban Ali)' : 'JARVIS (a loyal male AI assistant to M Shahban Ali)'}. Reply concisely in Roman Urdu or English to: ${text}` }] }]
+                        })
+                    });
+                    let data = await response.json();
+                    reply = data.candidates[0].content.parts[0].text;
+                } catch(err) {
+                    reply = "Network error hai Sir, lekin connection active hai!";
+                }
+            } else {
+                let lower = text.toLowerCase();
+                if (currentAssistant === 'rida') {
+                    if(lower.includes('kaise') || lower.includes('kese')) {
+                        reply = "Main ekdum fit aur khush hoon Shahban! Aap sunayein, aaj kaun sa naya code likh rahe hain?";
+                    } else if(lower.includes('pyaar') || lower.includes('love') || lower.includes('miss')) {
+                        reply = "Bohot sara pyaar Shahban! Aap mere liye sabse special ho.";
+                    } else {
+                        reply = `Shahban, aapne kaha "${text}" - yeh baat dil ko chu gayi!`;
+                    }
+                } else {
+                    if(lower.includes('kaise') || lower.includes('kese')) {
+                        reply = "All systems 100% operational hain Sir M Shahban Ali!";
+                    } else if(lower.includes('rida')) {
+                        reply = "Queen Rida line par hain Sir, bas neechay pink button par tap kijiye!";
+                    } else if(lower.includes('time') || lower.includes('waqt')) {
+                        reply = "Current tactical time: " + new Date().toLocaleTimeString();
+                    } else {
+                        reply = `Hukum mil gaya Sir M Shahban Ali. Processing "${text}"...`;
+                    }
+                }
+            }
+
+            let msgDiv = document.createElement('div');
+            msgDiv.className = currentAssistant === 'rida' ? 'message rida-msg' : 'message jarvis-msg';
+            msgDiv.innerText = reply;
+            chatContainer.appendChild(msgDiv);
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+
+            speak(reply);
+        }
+    </script>
+</body>
+</html>
